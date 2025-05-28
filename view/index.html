@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sistema Administrativo de Tareas</title>
+    <!-- Bootstrap CSS -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./estilos.css">
+  </head>
+  <body style="justify-content: space-between;" class="bg-light d-flex flex-column min-vh-100">
+    <main>
+      <!-- Login View -->
+      <section
+        hidden
+        id="loginView"
+        class="card shadow p-4"
+        style="min-width: 320px; max-width: 400px"
+      >
+        <h2 class="mb-4 text-center">Login</h2>
+        <div class="mb-3">
+          <input
+            type="text"
+            id="username"
+            class="form-control"
+            placeholder="Usuario"
+          />
+        </div>
+        <div class="mb-3">
+          <input
+            type="password"
+            id="password"
+            class="form-control"
+            placeholder="Contraseña"
+          />
+        </div>
+        <button onclick="handleLogin()" class="btn btn-primary w-100">
+          Iniciar Sesión
+        </button>
+      </section>
+
+      <!-- Usuario View -->
+      <section
+        id="usuarioView"
+        hidden
+        class="card shadow p-4 text-center"
+        style="min-width: 320px; max-width: 400px"
+      >
+        <h2 class="mb-4">Bienvenido Usuario</h2>
+        <button onclick="logout()" class="btn btn-secondary">
+          Cerrar Sesión
+        </button>
+      </section>
+
+      <!-- Admin View -->
+      <section
+        id="adminView"
+        class="card shadow p-4 text-center"
+        style="min-width: 320px; max-width: 400px"
+      >
+        <h2 class="mb-4">Panel de Administrador</h2>
+        <button onclick="logout()" class="btn btn-secondary">
+          Cerrar Sesión
+        </button>
+      </section>
+    </main>
+
+    <footer>
+      <div class="container">
+        <p class="mb-1">&copy; 2025 Sistema Administrativo de Tareas</p>
+        <p class="mb-1">Desarrollado por Jemerson, Jean Carlo y Jonaikel</p>
+        <p class="mb-0">
+          Contactos Programadores:
+          <a href="mailto:jemerson@email.com">jemerson@email.com</a>,
+          <a href="mailto:jeancarlo@email.com">jeancarlo@email.com</a>,
+          <a href="mailto:jonaikel@email.com">jonaikel@email.com</a>
+        </p>
+      </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../actions/auth.js"></script>
+    <script src="../actions/tareas.js"></script>
+    <script src="../actions/usuario.js"></script>
+  </body>
+</html>
