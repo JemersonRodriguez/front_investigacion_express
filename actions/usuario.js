@@ -1,118 +1,107 @@
-// Simulación de tareas asignadas
-let tareasDBUser = [
-  {
-    id: 1,
-    usuario: "usuario",
-    titulo: "Preparar informe mensual",
-    descripcion: "Elaborar el informe de actividades del mes.",
-    fechaVencimiento: "2025-06-10",
-    estado: "asignada",
-    prioridad: "alta",
-    lugar: "Oficina",
-    horas: 5
-  },
-  {
-    id: 2,
-    usuario: "usuario",
-    titulo: "Revisión de inventario",
-    descripcion: "Verificar el inventario de productos.",
-    fechaVencimiento: "2025-06-15",
-    estado: "asignada",
-    prioridad: "media",
-    lugar: "Almacén",
-    horas: 3
-  }
-];
-
-// Simula fetch para obtener tareas del usuario
-function fetchTareasUsuario(username) {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve(tareasDBUser.filter(t => t.usuario === username));
-    }, 200);
-  });
-}
-
-// Simula fetch para actualizar estado de tarea
-function updateEstadoTarea(id, nuevoEstado) {
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      const tarea = tareasDBUser.find(t => t.id === id);
-      if (tarea) {
-        tarea.estado = nuevoEstado;
-        resolve({ success: true, tarea });
-      } else {
-        reject({ success: false, message: "Tarea no encontrada" });
-      }
-    }, 200);
-  });
-}
-
-// Renderiza la tabla de tareas en el contenedor
-window.renderTareasUsuario = async function(username) {
-  const tareas = await fetchTareasUsuario(username);
-  const container = document.getElementById("tareasContainer");
-  if (tareas.length === 0) {
-    container.innerHTML = "<p>No tienes tareas asignadas.</p>";
-    return;
-  }
-  let html = `
-    <div class="table-responsive">
-    <table class="table table-bordered table-striped align-middle">
-      <thead>
-        <tr>
-          <th>Título</th>
-          <th>Descripción</th>
-          <th>Fecha de Vencimiento</th>
-          <th>Estado</th>
-          <th>Prioridad</th>
-          <th>Lugar</th>
-          <th>Horas</th>
-          <th>Acción</th>
-        </tr>
-      </thead>
-      <tbody>
-  `;
-  tareas.forEach(t => {
-    let nextEstado = "";
-    let btnText = "";
-    if (t.estado === "asignada") {
-      nextEstado = "iniciada";
-      btnText = "Iniciar";
-    } else if (t.estado === "iniciada") {
-      nextEstado = "finalizada";
-      btnText = "Finalizar";
+// Obtiene las tareas del usuario autenticado desde el backend
+async function fetchTareasUsuario() {
+  const token = localStorage.getItem("token");
+  const response = await fetch("http://localhost:3000/api/tareas/", {
+    headers: {
+      "Authorization": `Bearer ${token}`
     }
-    html += `
-      <tr>
-        <td>${t.titulo}</td>
-        <td>${t.descripcion}</td>
-        <td>${t.fechaVencimiento}</td>
-        <td>${t.estado.charAt(0).toUpperCase() + t.estado.slice(1)}</td>
-        <td>${t.prioridad}</td>
-        <td>${t.lugar}</td>
-        <td>${t.horas}</td>
-        <td>
-          ${t.estado !== "finalizada"
-            ? `<button class="btn btn-sm btn-primary" onclick="cambiarEstadoTarea(${t.id}, '${nextEstado}')">${btnText}</button>`
-            : `<span class="badge bg-success">Completada</span>`
-          }
-        </td>
-      </tr>
-    `;
   });
-  html += "</tbody></table></div>";
-  container.innerHTML = html;
+  if (!response.ok) {
+    throw new Error("No se pudieron obtener las tareas");
+  }
+  return await response.json();
+}
+
+// Cambia el estado de la tarea (ASIGNADA -> INICIADA -> TERMINADA)
+window.cambiarEstadoTarea = async function(id, estadoActual) {
+  const token = localStorage.getItem("token");
+  let nuevoEstado = "";
+  if (estadoActual === "ASIGNADA") {
+    nuevoEstado = "INICIADA";
+  } else if (estadoActual === "INICIADA") {
+    nuevoEstado = "TERMINADA";
+  } else {
+    return; // Si ya está terminada, no hace nada
+  }
+
+  const response = await fetch(`http://localhost:3000/api/tareas/${id}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`
+    },
+    body: JSON.stringify({ estado_tarea: nuevoEstado })
+  });
+
+  if (response.ok) {
+    // Recarga la tabla de tareas para reflejar el cambio
+    window.renderTareasUsuario();
+  } else {
+    alert("No se pudo actualizar el estado de la tarea.");
+  }
 };
 
-// Acción para cambiar el estado de la tarea
-window.cambiarEstadoTarea = async function(id, nuevoEstado) {
+// Renderiza la tabla de tareas en el contenedor
+window.renderTareasUsuario = async function() {
   try {
-    await updateEstadoTarea(id, nuevoEstado);
-    // Obtener el usuario actual del input (o puedes guardar el usuario logueado en una variable global)
-    const username = document.getElementById("username").value.trim();
-    window.renderTareasUsuario(username);
+    const tareas = await fetchTareasUsuario();
+    const container = document.getElementById("tareasContainer");
+    if (tareas.length === 0) {
+      container.innerHTML = "<p>No tienes tareas asignadas.</p>";
+      return;
+    }
+    let html = `
+      <div class="table-responsive">
+      <table class="table table-bordered table-striped align-middle">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Título</th>
+            <th>Descripción</th>
+            <th>Fecha de Vencimiento</th>
+            <th>Prioridad</th>
+            <th>Lugar</th>
+            <th>Cantidad de Horas</th>
+            <th>Imagen</th>
+            <th>Creada</th>
+            <th>Actualizada</th>
+            <th>Acción</th>
+          </tr>
+        </thead>
+        <tbody>
+    `;
+    tareas.forEach(t => {
+      let btnHtml = "";
+      if (t.estado_tarea === "ASIGNADA") {
+        btnHtml = `<button class="btn btn-sm btn-primary" onclick="cambiarEstadoTarea(${t.id}, 'ASIGNADA')">Iniciar</button>`;
+      } else if (t.estado_tarea === "INICIADA") {
+        btnHtml = `<button class="btn btn-sm btn-primary" onclick="cambiarEstadoTarea(${t.id}, 'INICIADA')">Finalizar</button>`;
+      } else if (t.estado_tarea === "TERMINADA") {
+        btnHtml = `<span class="badge bg-success">Completada</span>`;
+      }
+      html += `
+        <tr>
+          <td>${t.id}</td>
+          <td>${t.titulo}</td>
+          <td>${t.descripcion}</td>
+          <td>${t.fecha_vencimiento || ""}</td>
+          <td>${t.prioridad || ""}</td>
+          <td>${t.lugar || ""}</td>
+          <td>${t.cantidad_horas || ""}</td>
+          <td>
+            ${t.imagen_ruta ? `<img src="http://localhost:3000/uploads/${t.imagen_ruta}" alt="Imagen" style="max-width:60px;max-height:60px;">` : ""}
+          </td>
+          <td>${t.createdAt ? new Date(t.createdAt).toLocaleString() : ""}</td>
+          <td>${t.updatedAt ? new Date(t.updatedAt).toLocaleString() : ""}</td>
+          <td>
+            ${btnHtml}
+          </td>
+        </tr>
+      `;
+    });
+    html += "</tbody></table></div>";
+    container.innerHTML = html;
   } catch (err) {
-    alert("Error al actualizar la tarea");
+    document.getElementById("tareasContainer").innerHTML = "<p>Error al cargar las tareas.</p>";
   }
 };
