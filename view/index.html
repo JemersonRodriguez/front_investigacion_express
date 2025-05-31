@@ -161,6 +161,15 @@
                   placeholder="Cantidad de horas"
                 />
               </div>
+              <!-- Aquí va el input de imagen -->
+              <div class="mb-2">
+                <input
+                  type="file"
+                  class="form-control"
+                  id="imagenTarea"
+                  accept="image/*"
+                />
+              </div>
               <div class="mb-2">
                 <select required class="form-control" id="usuarioAsignadoTarea">
                   <option value="">Asignar a usuario</option>
@@ -194,5 +203,36 @@
     <script src="../actions/tareas.js" defer></script>
     <script src="../actions/auth.js" defer></script>
     <script src="../actions/usuario.js" defer></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        // Mostrar la vista correcta según el token y el rol guardados
+        const token = localStorage.getItem("token");
+        const rol = localStorage.getItem("rol");
+        if (token && rol) {
+          document.getElementById("loginView").hidden = true;
+          if (rol === "ADMIN") {
+            document.getElementById("adminView").hidden = false;
+            document.getElementById("usuarioView").hidden = true;
+            window.renderTareasAdmin();
+          } else if (rol === "USER" || rol === "usuario") {
+            document.getElementById("usuarioView").hidden = false;
+            document.getElementById("adminView").hidden = true;
+            window.renderTareasUsuario();
+          }
+        } else {
+          document.getElementById("loginView").hidden = false;
+          document.getElementById("adminView").hidden = true;
+          document.getElementById("usuarioView").hidden = true;
+        }
+
+        // Cuando la modal de crear tarea se va a mostrar, carga los usuarios
+        const modalCrearTarea = document.getElementById("modalCrearTarea");
+        if (modalCrearTarea) {
+          modalCrearTarea.addEventListener("show.bs.modal", function () {
+            renderSelectUsuarios();
+          });
+        }
+      });
+    </script>
   </body>
 </html>
