@@ -23,6 +23,7 @@ window.Login = async function () {
     localStorage.setItem("usuarioNombre", data.usuario.nombre);
 
     document.getElementById("loginView").hidden = true;
+    document.getElementById("registerView").hidden = true;
     if (data.usuario.rol === "ADMIN") {
       document.getElementById("adminView").hidden = false;
       document.getElementById("usuarioView").hidden = true;
@@ -37,9 +38,49 @@ window.Login = async function () {
   }
 };
 
+// Mostrar la vista de registro y ocultar login
+window.mostrarRegisterView = function() {
+  document.getElementById("loginView").hidden = true;
+  document.getElementById("registerView").hidden = false;
+};
+
+// Mostrar la vista de login y ocultar registro
+window.mostrarLoginView = function() {
+  document.getElementById("registerView").hidden = true;
+  document.getElementById("loginView").hidden = false;
+};
+
+// Registrar usuario
+window.registrarUsuario = async function(event) {
+  event.preventDefault();
+  const nombre = document.getElementById("registerNombre").value.trim();
+  const email = document.getElementById("registerEmail").value.trim();
+  const password = document.getElementById("registerPassword").value;
+  const rol = document.getElementById("registerRol").value;
+
+  try {
+    const response = await fetch("http://localhost:3000/api/usuarios/", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ nombre, email, password, rol })
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      alert(data.error || "No se pudo registrar el usuario.");
+      return;
+    }
+    alert("Usuario registrado correctamente. Ahora puedes iniciar sesión.");
+    mostrarLoginView();
+    event.target.reset();
+  } catch (err) {
+    alert("Error al registrar usuario.");
+  }
+};
+
 // Cerrar sesión
 window.logout = function () {
   document.getElementById("loginView").hidden = false;
+  document.getElementById("registerView").hidden = true;
   document.getElementById("adminView").hidden = true;
   document.getElementById("usuarioView").hidden = true;
   // Limpiar localStorage

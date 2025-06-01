@@ -12,7 +12,7 @@
     <link rel="stylesheet" href="./estilos.css" />
   </head>
   <body
-    style="justify-content: space-between"
+    style="justify-content: space-between ;display: flex;"
     class="bg-light d-flex flex-column min-vh-100"
   >
     <main>
@@ -42,6 +42,55 @@
         <button onclick="Login()" class="btn btn-primary w-100">
           Iniciar Sesión
         </button>
+        <button type="button" class="btn btn-link w-100 mt-2" onclick="mostrarRegisterView()">¿No tienes cuenta? Regístrate</button>
+      </section>
+
+      <!-- Registro View -->
+      <section
+        id="registerView"
+        hidden
+        class="card shadow p-4"
+        style="min-width: 320px; max-width: 400px"
+      >
+        <h2 class="mb-4 text-center">Registrar Usuario</h2>
+        <form onsubmit="registrarUsuario(event)">
+          <div class="mb-3">
+            <input
+              type="text"
+              id="registerNombre"
+              class="form-control"
+              placeholder="Nombre"
+              required
+            />
+          </div>
+          <div class="mb-3">
+            <input
+              type="email"
+              id="registerEmail"
+              class="form-control"
+              placeholder="Email"
+              required
+            />
+          </div>
+          <div class="mb-3">
+            <input
+              type="password"
+              id="registerPassword"
+              class="form-control"
+              placeholder="Contraseña"
+              required
+            />
+          </div>
+          <div class="mb-3">
+            <select id="registerRol" class="form-control" required>
+              <option value="">Rol</option>
+              <option value="USER">Usuario</option>
+              <option value="ADMIN">Administrador</option>
+            </select>
+          </div>
+          <button type="submit" class="btn btn-primary w-100">Registrar</button>
+          <button type="button" class="btn btn-link w-100 mt-2" onclick="mostrarLoginView()">¿Ya tienes cuenta? Inicia sesión</button>
+        </form>
       </section>
 
       <!-- Usuario View -->
@@ -183,6 +232,103 @@
           </form>
         </div>
       </div>
+
+      <!-- Modal para editar tarea -->
+      <div
+        class="modal fade"
+        id="modalEditarTarea"
+        tabindex="-1"
+        aria-labelledby="modalEditarTareaLabel"
+        aria-hidden="true"
+      >
+        <div class="modal-dialog">
+          <form class="modal-content" onsubmit="editarTareaAdmin(event)">
+            <input type="hidden" id="editarTareaId" />
+            <div class="modal-header">
+              <h5 class="modal-title" id="modalEditarTareaLabel">
+                Editar Tarea
+              </h5>
+              <button
+                type="button"
+                class="btn-close"
+                data-bs-dismiss="modal"
+                aria-label="Cerrar"
+              ></button>
+            </div>
+            <div class="modal-body">
+              <div class="mb-2">
+                <input
+                  required
+                  type="text"
+                  class="form-control"
+                  id="editarTituloTarea"
+                  placeholder="Título"
+                />
+              </div>
+              <div class="mb-2">
+                <textarea
+                  required
+                  class="form-control"
+                  id="editarDescripcionTarea"
+                  placeholder="Descripción"
+                ></textarea>
+              </div>
+              <div class="mb-2">
+                <input
+                  required
+                  type="date"
+                  class="form-control"
+                  id="editarFechaVencimientoTarea"
+                />
+              </div>
+              <div class="mb-2">
+                <select required class="form-control" id="editarPrioridadTarea">
+                  <option value="">Prioridad</option>
+                  <option value="alta">Alta</option>
+                  <option value="media">Media</option>
+                  <option value="baja">Baja</option>
+                </select>
+              </div>
+              <div class="mb-2">
+                <input
+                  required
+                  type="text"
+                  class="form-control"
+                  id="editarLugarTarea"
+                  placeholder="Lugar"
+                />
+              </div>
+              <div class="mb-2">
+                <input
+                  required
+                  type="number"
+                  min="1"
+                  class="form-control"
+                  id="editarHorasTarea"
+                  placeholder="Cantidad de horas"
+                />
+              </div>
+              <div class="mb-2">
+                <input
+                  type="file"
+                  class="form-control"
+                  id="editarImagenTarea"
+                  accept="image/*"
+                />
+              </div>
+              <div class="mb-2">
+                <select required class="form-control" id="editarUsuarioAsignadoTarea">
+                  <option value="">Asignar a usuario</option>
+                  <!-- Opciones generadas dinámicamente -->
+                </select>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+            </div>
+          </form>
+        </div>
+      </div>
     </main>
 
     <footer>
@@ -204,12 +350,49 @@
     <script src="../actions/auth.js" defer></script>
     <script src="../actions/usuario.js" defer></script>
     <script>
+      // Mostrar la vista de registro y ocultar login
+      window.mostrarRegisterView = function() {
+        document.getElementById("loginView").hidden = true;
+        document.getElementById("registerView").hidden = false;
+      };
+      // Mostrar la vista de login y ocultar registro
+      window.mostrarLoginView = function() {
+        document.getElementById("registerView").hidden = true;
+        document.getElementById("loginView").hidden = false;
+      };
+      // Registrar usuario
+      window.registrarUsuario = async function(event) {
+        event.preventDefault();
+        const nombre = document.getElementById("registerNombre").value.trim();
+        const email = document.getElementById("registerEmail").value.trim();
+        const password = document.getElementById("registerPassword").value;
+        const rol = document.getElementById("registerRol").value;
+        try {
+          const response = await fetch("http://localhost:3000/api/usuarios/", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ nombre, email, password, rol })
+          });
+          const data = await response.json();
+          if (!response.ok) {
+            alert(data.error || "No se pudo registrar el usuario.");
+            return;
+          }
+          alert("Usuario registrado correctamente. Ahora puedes iniciar sesión.");
+          mostrarLoginView();
+          event.target.reset();
+        } catch (err) {
+          alert("Error al registrar usuario.");
+        }
+      };
+
       document.addEventListener("DOMContentLoaded", function () {
         // Mostrar la vista correcta según el token y el rol guardados
         const token = localStorage.getItem("token");
         const rol = localStorage.getItem("rol");
         if (token && rol) {
           document.getElementById("loginView").hidden = true;
+          document.getElementById("registerView").hidden = true;
           if (rol === "ADMIN") {
             document.getElementById("adminView").hidden = false;
             document.getElementById("usuarioView").hidden = true;
@@ -221,6 +404,7 @@
           }
         } else {
           document.getElementById("loginView").hidden = false;
+          document.getElementById("registerView").hidden = true;
           document.getElementById("adminView").hidden = true;
           document.getElementById("usuarioView").hidden = true;
         }

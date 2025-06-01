@@ -178,3 +178,116 @@ window.filtrarTareasAdmin = function () {
   const filtro = document.getElementById("filtroTarea").value;
   window.renderTareasAdmin(filtro);
 };
+
+// Mostrar modal de edición con datos precargados
+window.mostrarModalEditarTarea = function(id) {
+  // Busca la tarea en la tabla actual (ya cargada)
+  fetchTareas().then(tareas => {
+    const tarea = tareas.find(t => t.id === id);
+    if (!tarea) {
+      alert("Tarea no encontrada.");
+      return;
+    }
+    // Llena los campos de la modal de edición (debes tener una modal similar a la de crear)
+    document.getElementById("editarTareaId").value = tarea.id;
+    document.getElementById("editarTituloTarea").value = tarea.titulo;
+    document.getElementById("editarDescripcionTarea").value = tarea.descripcion;
+    document.getElementById("editarFechaVencimientoTarea").value = tarea.fecha_vencimiento;
+    document.getElementById("editarPrioridadTarea").value = tarea.prioridad;
+    document.getElementById("editarLugarTarea").value = tarea.lugar;
+    document.getElementById("editarHorasTarea").value = tarea.cantidad_horas;
+    document.getElementById("editarUsuarioAsignadoTarea").value = tarea.usuarioId;
+    // No precargar imagen por seguridad, pero puedes mostrar el nombre actual si quieres
+
+    // Mostrar la modal
+    const modal = new bootstrap.Modal(document.getElementById("modalEditarTarea"));
+    modal.show();
+    renderSelectUsuariosEditar(); // Para llenar el select de usuarios en edición
+  });
+};
+
+// Enviar PATCH para editar tarea
+window.editarTareaAdmin = async function(event) {
+  event.preventDefault();
+  const token = localStorage.getItem("token");
+  const id = document.getElementById("editarTareaId").value;
+  const titulo = document.getElementById("editarTituloTarea").value.trim();
+  const descripcion = document.getElementById("editarDescripcionTarea").value.trim();
+  const fecha_vencimiento = document.getElementById("editarFechaVencimientoTarea").value;
+  const prioridad = document.getElementById("editarPrioridadTarea").value;
+  const lugar = document.getElementById("editarLugarTarea").value.trim();
+  const cantidad_horas = document.getElementById("editarHorasTarea").value;
+  const usuarioId = document.getElementById("editarUsuarioAsignadoTarea").value;
+  const imagenInput = document.getElementById("editarImagenTarea");
+
+  const formData = new FormData();
+  formData.append("titulo", titulo);
+  formData.append("descripcion", descripcion);
+  formData.append("fecha_vencimiento", fecha_vencimiento);
+  formData.append("prioridad", prioridad);
+  formData.append("lugar", lugar);
+  formData.append("cantidad_horas", cantidad_horas);
+  formData.append("usuarioId", usuarioId);
+
+  if (imagenInput && imagenInput.files[0]) {
+    formData.append("imagen", imagenInput.files[0]);
+  }
+
+  try {
+    const response = await fetch(`http://localhost:3000/api/tareas/${id}`, {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${token}`
+        // No pongas Content-Type aquí
+      },
+      body: formData
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      alert(data.error || "No se pudo editar la tarea.");
+      return;
+    }
+    // Cierra la modal y recarga la tabla
+    const modal = bootstrap.Modal.getInstance(document.getElementById("modalEditarTarea"));
+    if (modal) modal.hide();
+    window.renderTareasAdmin();
+    event.target.reset();
+  } catch (err) {
+    alert("Error al editar la tarea.");
+  }
+};
+
+// Renderiza el select de usuarios en la modal de editar tarea
+window.renderSelectUsuariosEditar = async function () {
+  const select = document.getElementById("editarUsuarioAsignadoTarea");
+  select.innerHTML = '<option value="">Asignar a usuario</option>';
+  try {
+    const usuarios = await fetchUsuarios();
+    usuarios.forEach((u) => {
+      select.innerHTML += `<option value="${u.id}">${u.nombre}</option>`;
+    });
+  } catch (err) {
+    select.innerHTML = '<option value="">Error al cargar usuarios</option>';
+  }
+};
+
+window.eliminarTareaAdmin = async function(id) {
+  if (!confirm("¿Seguro que deseas eliminar esta tarea?")) return;
+  const token = localStorage.getItem("token");
+  try {
+    const response = await fetch(`http://localhost:3000/api/tareas/${id}`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      alert(data.error || data.mensaje || "No se pudo eliminar la tarea.");
+      return;
+    }
+    window.renderTareasAdmin();
+  } catch (err) {
+    alert("Error al eliminar la tarea.");
+  }
+};
